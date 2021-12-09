@@ -1,5 +1,7 @@
 #pragma once 
 
+#include "VectorField.hpp"
+
 // Forward Declarations
 struct SDL_Window;
 struct SDL_Renderer;
@@ -23,4 +25,6 @@ private:
 	SDL_Renderer* renderer = nullptr;
 
 	bool shouldClose = false;
+
+	VectorField velocity;
 };
