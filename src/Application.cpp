@@ -37,7 +37,7 @@ Application::Application(int width, int height, const char* title)
 
 	// Construct dummy velocity field
 	// TODO: Remove eventually
-	int fieldSize = 49;
+	int fieldSize = 39;
 	double curl1 = -1.0;
 	double curl2 = 1.0;
 	std::vector<double> hori(fieldSize * fieldSize);
@@ -51,15 +51,17 @@ Application::Application(int width, int height, const char* title)
 			double realX = -2.0 + (4.0 / (double)fieldSize) * (double)x;
 			double realY = -2.0 + (4.0 / (double)fieldSize) * (double)y;
 
-			// hori[y * fieldSize + x] = (realY + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) - (realY - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0)); 
-			// vert[y * fieldSize + x] = -(realX + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) + (realX - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0));
+			// hori[y * fieldSize + x] = -(realX + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) + (realX - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0)); 
+			// vert[y * fieldSize + x] =  (realY + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) - (realY - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0));
 		
 			// hori[y * fieldSize + x] = realY / sqrt(realX * realX + realY * realY);
 			// vert[y * fieldSize + x] = -realX / sqrt(realX * realX + realY * realY);
 
-			hori[y * fieldSize + x] = -realY;
-			vert[y * fieldSize + x] = realX;
+			// hori[y * fieldSize + x] = -realY;
+			// vert[y * fieldSize + x] = realX;
 
+			hori[y * fieldSize + x] = realY;
+			vert[y * fieldSize + x] = -realX - 1.0*realY;
 		}
 	}
 

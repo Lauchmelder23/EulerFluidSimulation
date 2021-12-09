@@ -56,8 +56,8 @@ void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
 			SDL_RenderDrawLineF(renderer,
 				(double)targetRect.x + cellWidth * (x + 0.5),
 				(double)targetRect.y + cellHeight * (y + 0.5),
-				(double)targetRect.x + cellWidth * (x + 0.5) + horizontal[y * width + x] / biggestMagnitude * cellWidth,
-				(double)targetRect.y + cellHeight * (y + 0.5) + vertical[y * width + x] / biggestMagnitude * cellHeight
+				(double)targetRect.x + cellWidth * (x + 0.5) + horizontal[y * width + x] / biggestMagnitude * cellWidth * 2.5,
+				(double)targetRect.y + cellHeight * (y + 0.5) + vertical[y * width + x] / biggestMagnitude * cellHeight * 2.5
 			);
 		}
 	}
