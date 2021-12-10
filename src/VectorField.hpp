@@ -14,11 +14,12 @@ public:
 
 	void Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect);
 
-private:
-	int width, height;
-
+public:
 	std::vector<double> horizontal;
 	std::vector<double> vertical;
+
+private:
+	int width, height;
 
 	double biggestMagnitude = 0.0;
 };

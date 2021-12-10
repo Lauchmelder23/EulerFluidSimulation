@@ -35,41 +35,16 @@ Application::Application(int width, int height, const char* title)
 		return;
 	}
 
-	// Construct dummy velocity field
-	// TODO: Remove eventually
-	int fieldSize = 39;
-	double curl1 = -1.0;
-	double curl2 = 1.0;
-	std::vector<double> hori(fieldSize * fieldSize);
-	std::vector<double> vert(fieldSize * fieldSize);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	for (int y = 0; y < fieldSize; y++)
-	{
-		for (int x = 0; x < fieldSize; x++)
-		{
-			// map internal coords to "real world" coordinates
-			double realX = -2.0 + (4.0 / (double)fieldSize) * (double)x;
-			double realY = -2.0 + (4.0 / (double)fieldSize) * (double)y;
-
-			// hori[y * fieldSize + x] = -(realX + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) + (realX - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0)); 
-			// vert[y * fieldSize + x] =  (realY + 1.0) / sqrt((realX + 1.0) * (realX + 1.0) + (realY + 1.0) * (realY + 1.0)) - (realY - 1.0) / sqrt((realX - 1.0) * (realX - 1.0) + (realY - 1.0) * (realY - 1.0));
-		
-			// hori[y * fieldSize + x] = realY / sqrt(realX * realX + realY * realY);
-			// vert[y * fieldSize + x] = -realX / sqrt(realX * realX + realY * realY);
-
-			// hori[y * fieldSize + x] = -realY;
-			// vert[y * fieldSize + x] = realX;
-
-			hori[y * fieldSize + x] = realY;
-			vert[y * fieldSize + x] = -realX - 1.0*realY;
-		}
-	}
-
-	velocity = VectorField(fieldSize, fieldSize, hori, vert);
+	field = new FluidField(60);
+	before = std::chrono::steady_clock::now();
 }
 
 Application::~Application()
 {
+	delete field;
+
 	SDL_DestroyRenderer(renderer);	// Let's just destroy this renderer regardless of other applications in this program :) what could go wrong
 	SDL_DestroyWindow(window);
 }
@@ -109,7 +84,10 @@ void Application::HandleEvents()
 
 void Application::Update()
 {
+	double frametime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - before).count();
+	before = std::chrono::steady_clock::now();
 
+	field->DensityStep(0.0005, frametime);
 }
 
 void Application::Render()
@@ -118,7 +96,7 @@ void Application::Render()
 	SDL_RenderClear(renderer);
 
 
-	velocity.Draw(renderer, {10, 10, 790, 790});
+	field->Draw(renderer, {10, 10, 990, 990});
 
 	SDL_RenderPresent(renderer);
 }

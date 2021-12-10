@@ -45,7 +45,7 @@ void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
 	vectorCenterSquare.w = cellWidth / 5.0;
 	vectorCenterSquare.h = cellHeight / 5.0;
 
-	SDL_SetRenderDrawColor(renderer, 200, 20, 20, 255);
+	SDL_SetRenderDrawColor(renderer, 200, 20, 20, 60);
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)

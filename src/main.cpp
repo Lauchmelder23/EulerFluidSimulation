@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	Application* app = new Application(800, 800, "Euler Fluid Simulation");
+	Application* app = new Application(1000, 1000, "Euler Fluid Simulation");
 	app->Launch();
 
 	delete app;

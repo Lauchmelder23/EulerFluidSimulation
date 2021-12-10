@@ -1,6 +1,7 @@
 #pragma once 
 
-#include "VectorField.hpp"
+#include <chrono>
+#include "FluidField.hpp"
 
 // Forward Declarations
 struct SDL_Window;
@@ -24,7 +25,8 @@ private:
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderer = nullptr;
 
+	std::chrono::steady_clock::time_point before;
 	bool shouldClose = false;
 
-	VectorField velocity;
+	FluidField* field;
 };
