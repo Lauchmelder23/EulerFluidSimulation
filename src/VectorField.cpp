@@ -24,22 +24,7 @@ VectorField::VectorField(int width, int height, const std::vector<double>& hori,
 	horizontal = hori;
 	vertical = vert;
 
-	for (int y = 0; y < this->height; y++)
-	{
-		for (int x = 0; x < this->width; x++)
-		{
-			double u = horizontal[y * this->width + x];
-			double v = vertical[y * this->width + x];
-			double magnitude = u + v;
-
-			biggestMagnitude += (biggestMagnitude < magnitude) * (magnitude - biggestMagnitude);
-		}
-	}
-
-	if (biggestMagnitude == 0.0)	// should use an epsilon probably
-		biggestMagnitude = 1.0;
-
-	biggestMagnitude = sqrt(biggestMagnitude * 5.0);
+	RecalculateMagnitude();
 }
 
 void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
@@ -67,4 +52,24 @@ void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
 			);
 		}
 	}
+}
+
+void VectorField::RecalculateMagnitude()
+{
+	for (int y = 0; y < this->height; y++)
+	{
+		for (int x = 0; x < this->width; x++)
+		{
+			double u = horizontal[y * this->width + x];
+			double v = vertical[y * this->width + x];
+			double magnitude = u + v;
+
+			biggestMagnitude += (biggestMagnitude < magnitude) * (magnitude - biggestMagnitude);
+		}
+	}
+
+	if (biggestMagnitude == 0.0)	// should use an epsilon probably
+		biggestMagnitude = 1.0;
+
+	biggestMagnitude = sqrt(biggestMagnitude * 5.0);
 }
