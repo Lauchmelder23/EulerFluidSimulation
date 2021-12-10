@@ -48,6 +48,7 @@ FluidField::~FluidField()
 void FluidField::AddSource(int x, int y, double dens, double dt)
 {
 	PVALUE(density, x, y) += dt * dens;
+	PVALUE(density, x, y) = std::max(PVALUE(density, x, y), 0.0);
 }
 
 void FluidField::ApplyBoundaryConditions(BoundaryCondition condition, std::vector<double>& field)
@@ -128,11 +129,19 @@ void FluidField::DensityStep(double diff, double dt)
 	// AddSource(3, 50, 60.0, dt);
 
 	int x, y;
-	SDL_GetMouseState(&x, &y);
+	Uint32 buttons = SDL_GetMouseState(&x, &y);
 	int dx = (double)(this->size - 2) / (double)(990 - 10) * (double)(x - 10);
 	int dy = (double)(this->size - 2) / (double)(990 - 10) * (double)(y - 10);
-	if(dx > 1 && dx < this->size - 2 && dy > 1 && dy < this->size - 2)
-		AddSource(dx, dy, 60.0, dt);
+	
+	int factor = 0;
+
+	if (buttons & SDL_BUTTON_LMASK)
+		factor = 1;
+	else if (buttons & SDL_BUTTON_RMASK)
+		factor = -1;
+	
+	if(dx > 0 && dx < this->size - 1 && dy > 0 && dy < this->size - 1)
+		AddSource(dx, dy, 60.0 * factor, dt);
 
 	std::swap(prevDensity, density);	
 	Diffuse(diff, dt);
