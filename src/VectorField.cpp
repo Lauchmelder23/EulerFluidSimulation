@@ -1,5 +1,7 @@
 #include "VectorField.hpp"
 
+#include <chrono>
+#include <iostream>
 #include <SDL.h>
 
 VectorField::VectorField() :
@@ -22,18 +24,22 @@ VectorField::VectorField(int width, int height, const std::vector<double>& hori,
 	horizontal = hori;
 	vertical = vert;
 
-	for (double u : horizontal)
+	for (int y = 0; y < this->height; y++)
 	{
-		for (double v : vertical)
+		for (int x = 0; x < this->width; x++)
 		{
-			biggestMagnitude = std::max(biggestMagnitude, u * u + v * v);
+			double u = horizontal[y * this->width + x];
+			double v = vertical[y * this->width + x];
+			double magnitude = u + v;
+
+			biggestMagnitude += (biggestMagnitude < magnitude) * (magnitude - biggestMagnitude);
 		}
 	}
 
 	if (biggestMagnitude == 0.0)	// should use an epsilon probably
 		biggestMagnitude = 1.0;
 
-	biggestMagnitude = sqrt(biggestMagnitude);
+	biggestMagnitude = sqrt(biggestMagnitude * 5.0);
 }
 
 void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
@@ -45,7 +51,7 @@ void VectorField::Draw(SDL_Renderer* renderer, const SDL_Rect& targetRect)
 	vectorCenterSquare.w = cellWidth / 5.0;
 	vectorCenterSquare.h = cellHeight / 5.0;
 
-	SDL_SetRenderDrawColor(renderer, 200, 20, 20, 60);
+	SDL_SetRenderDrawColor(renderer, 200, 20, 20, 100);
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)

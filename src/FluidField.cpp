@@ -24,15 +24,18 @@ FluidField::FluidField(int size) :
 			double realX = -2.0 + (4.0 / (double)size) * (double)x;
 			double realY = -2.0 + (4.0 / (double)size) * (double)y;
 
-			// hori[y * this->size + x] = 1.0 * realY;
-			// vert[y * this->size + x] = 1.0 * (- realX - 0.0 * realY);
+			hori[y * this->size + x] = 1.0 * realY;
+			vert[y * this->size + x] = 1.0 * (- realX - 0.25 * realY);
 
-			hori[y * this->size + x] = 0.2 * realY * realY;
-			vert[y * this->size + x] = 0.2 * realX * realX;
+			// hori[y * this->size + x] = 0.2 * realY * realY;
+			// vert[y * this->size + x] = 0.2 * realX * realX;
 		}
 	}
 
-	vel		= new VectorField(this->size, this->size, hori, vert);
+	ApplyBoundaryConditions(BoundaryCondition::InvertHorizontal, hori);
+	ApplyBoundaryConditions(BoundaryCondition::InvertVertical, vert);
+
+	vel		= new VectorField(this->size, this->size, hori, vert);	// gonna do the same inefficient calculations twice, why not
 	prevVel = new VectorField(this->size, this->size, hori, vert);
 }
 
@@ -56,16 +59,17 @@ void FluidField::ApplyBoundaryConditions(BoundaryCondition condition, std::vecto
 	int N = this->size - 2;
 	for (int i = 1; i <= N; i++)
 	{
-		field[i * (N + 2) + 0]			= (condition == BoundaryCondition::InvertHorizontal)	? -field[i * (N + 2) + 1] : field[i * (N + 2) + 1];
-		field[i * (N + 2) + N + 1]		= (condition == BoundaryCondition::InvertHorizontal)	? -field[i * (N + 2) + N] : field[i * (N + 2) + N];
-		field[0 * (N + 2) + i]			= (condition == BoundaryCondition::InvertVertical)		? -field[1 * (N + 2) + i] : field[1 * (N + 2) + i];
-		field[(N + 1) * (N + 2) + i]	= (condition == BoundaryCondition::InvertVertical)		? -field[N * (N + 2) + i] : field[N * (N + 2) + i];
+
+		VALUE(field, 0		, i) = (condition == BoundaryCondition::InvertHorizontal)	? -VALUE(field, 1, i) : VALUE(field, 1, i); // VALUE(field, N, i);
+		VALUE(field, N + 1	, i) = (condition == BoundaryCondition::InvertHorizontal)	? -VALUE(field, N, i) : VALUE(field, N, i);	// VALUE(field, 1, i);
+		VALUE(field, i		, 0) = (condition == BoundaryCondition::InvertVertical)		? -VALUE(field, i, 1) : VALUE(field, i, 1);	// VALUE(field, i, N);
+		VALUE(field, i	, N + 1) = (condition == BoundaryCondition::InvertVertical)		? -VALUE(field, i, N) : VALUE(field, i, N);	// VALUE(field, i, 1);
 	}
 
-	field[0 * (N + 2) + 0]				= 0.5 * (field[0 * (N + 2) + 1]			+ field[1 * (N + 2) + 0]);
-	field[(N + 1) * (N + 2) + 0]		= 0.5 * (field[(N + 1) * (N + 2) + 1]	+ field[N * (N + 2) + 0]);
-	field[0 * (N + 2) + (N + 1)]		= 0.5 * (field[0 * (N + 2) + N]			+ field[1 * (N + 2) + (N + 1)]);
-	field[(N + 1) * (N + 2) + (N + 1)] = 0.5 * (field[(N + 1) * (N + 2) + N]	+ field[N * (N + 2) + (N + 1)]);
+	VALUE(field, 0		, 0		) = 0.5 * (VALUE(field, 1, 0	) + VALUE(field, 0, 1	 ));
+	VALUE(field, 0		, N + 1	) = 0.5 * (VALUE(field, 1, N + 1) + VALUE(field, 0, N	 ));
+	VALUE(field, N + 1	, 0		) = 0.5 * (VALUE(field, N, 0	) + VALUE(field, N + 1, 1));
+	VALUE(field, N + 1	, N + 1	) = 0.5 * (VALUE(field, N, N + 1) + VALUE(field, N + 1, N));
 }
 
 void FluidField::Diffuse(double diff, double dt)
@@ -124,7 +128,7 @@ void FluidField::Advect(double dt)
 
 void FluidField::DensityStep(double diff, double dt)
 {
-	// AddSource(3, 3, 60.0, dt);
+	AddSource(this->size / 2, this->size / 2, -10000000.0, dt);
 	// AddSource(50, 3, 60.0, dt);
 	// AddSource(3, 50, 60.0, dt);
 
@@ -141,7 +145,7 @@ void FluidField::DensityStep(double diff, double dt)
 		factor = -1;
 	
 	if(dx > 0 && dx < this->size - 1 && dy > 0 && dy < this->size - 1)
-		AddSource(dx, dy, 60.0 * factor, dt);
+		AddSource(dx, dy, 300.0 * factor, dt);
 
 	std::swap(prevDensity, density);	
 	Diffuse(diff, dt);

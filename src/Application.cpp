@@ -37,7 +37,7 @@ Application::Application(int width, int height, const char* title)
 
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	field = new FluidField(60);
+	field = new FluidField(100);
 	before = std::chrono::steady_clock::now();
 }
 
@@ -87,7 +87,7 @@ void Application::Update()
 	double frametime = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - before).count();
 	before = std::chrono::steady_clock::now();
 
-	field->DensityStep(0.0005, frametime);
+	field->DensityStep(0.001, frametime);
 }
 
 void Application::Render()
@@ -96,7 +96,7 @@ void Application::Render()
 	SDL_RenderClear(renderer);
 
 
-	field->Draw(renderer, {10, 10, 990, 990});
+	field->Draw(renderer, {0, 0, 1000, 1000});
 
 	SDL_RenderPresent(renderer);
 }
