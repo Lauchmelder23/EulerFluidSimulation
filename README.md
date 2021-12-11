@@ -1,1 +1,3 @@
-# Euler Fluid Simulation
+# Numerical Methods
+
+Badly implementing numerical algorithms to learn
