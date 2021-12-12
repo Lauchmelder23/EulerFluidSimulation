@@ -1,8 +1,10 @@
-#include "Application.hpp"
+#include "EulerFluid.hpp"
+
+#include <thread>
 
 int main(int argc, char** argv)
 {
-	Application* app = new Application(1000, 1000, "Euler Fluid Simulation");
+	EulerFluid* app = new EulerFluid(1000, 1000, "Euler Fluid Simulation");
 	app->Launch();
 
 	delete app;

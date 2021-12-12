@@ -16,5 +16,6 @@ else (SDL2_FOUND)
 	set (SDL2_LIBRARIES SDL2-static SDL2main)
 endif (SDL2_FOUND)
 
-# Include sub-projects.
+# Include sub-projects
+add_subdirectory ("lib")
 add_subdirectory ("src")
