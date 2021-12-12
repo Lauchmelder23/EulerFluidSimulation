@@ -88,7 +88,7 @@ void Application::Update()
 	before = std::chrono::steady_clock::now();
 
 	field->VelocityStep(0.002, frametime);
-	field->DensityStep(0.001, frametime);
+	field->DensityStep(0.0005, frametime);
 }
 
 void Application::Render()

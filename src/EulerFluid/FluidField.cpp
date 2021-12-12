@@ -215,7 +215,7 @@ void FluidField::VelocityStep(double visc, double dt)
 	AdvectVelocity(dt);
 	Project();
 
-	vel->RecalculateMagnitude();
+	// vel->RecalculateMagnitude();
 }
 
 void FluidField::Project()

@@ -62,14 +62,15 @@ void VectorField::RecalculateMagnitude()
 		{
 			double u = horizontal[y * this->width + x];
 			double v = vertical[y * this->width + x];
-			double magnitude = u + v;
+			double magnitude = u*u + v*v;
 
-			biggestMagnitude += (biggestMagnitude < magnitude) * (magnitude - biggestMagnitude);
+			biggestMagnitude = std::max(biggestMagnitude, magnitude);
 		}
 	}
 
 	if (biggestMagnitude == 0.0)	// should use an epsilon probably
 		biggestMagnitude = 1.0;
 
-	biggestMagnitude = sqrt(biggestMagnitude * 5.0);
+	biggestMagnitude = sqrt(biggestMagnitude);
+	biggestMagnitude = 0.5f;
 }
