@@ -1,7 +1,7 @@
 
 add_library(nm_utils STATIC
 	"Window.cpp"
- "RetentiveArray.hpp")
+ "RetentiveArray.hpp" "RetentiveObject.hpp" "RetentiveEntity.hpp")
 
 target_include_directories(nm_utils PUBLIC ${SDL2_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(nm_utils PUBLIC ${SDL2_LIBRARIES})
