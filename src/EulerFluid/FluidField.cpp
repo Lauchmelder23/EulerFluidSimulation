@@ -7,11 +7,12 @@
 #define VALUE(arr, x, y) ((arr)[(y) * this->size + (x)])
 #define PVALUE(arr, x, y) ((*(arr))[(y) * this->size + (x)])
 
+#define IDX(x, y, w) ((y) * (w) + (x))
+
 FluidField::FluidField(int size) :
 	size(size + 2)
 {
-	density		= new std::vector<double>(this->size * this->size, 0.0);
-	prevDensity = new std::vector<double>(this->size * this->size, 0.0);
+	density = RetentiveArray<double, 1>(this->size * this->size);
 
 	std::vector<double> hori(this->size * this->size);
 	std::vector<double> vert(this->size * this->size);
@@ -38,17 +39,14 @@ FluidField::FluidField(int size) :
 
 FluidField::~FluidField()
 {
-	delete prevDensity;
-	delete density;
-
 	delete prevVel;
 	delete vel;
 }
 
 void FluidField::AddSource(int x, int y, double dens, double dt)
 {
-	PVALUE(density, x, y) += dt * dens;
-	PVALUE(density, x, y) = std::max(PVALUE(density, x, y), 0.0);
+	density.Current()[IDX(x, y, size)] = dt * dens;
+	density.Current()[IDX(x, y, size)] = std::max(density[0][IDX(x, y, size)], 0.0);
 }
 
 void FluidField::AddFlow(int x, int y, double dx, double dy, double dt)
@@ -86,11 +84,11 @@ void FluidField::Diffuse(double diff, double dt)
 		{
 			for (int j = 1; j <= N; j++)
 			{
-				PVALUE(density, i, j) = (PVALUE(prevDensity, i, j) + a * (PVALUE(density, i - 1, j) + PVALUE(density, i + 1, j) + PVALUE(density, i, j - 1) + PVALUE(density, i, j + 1))) / (1 + 4 * a);
+				density[0][IDX(i, j, size)] = (density[1][IDX(i, j, size)] + a * (density[0][IDX(i - 1, j, size)] + density[0][IDX(i + 1, j, size)] + density[0][IDX(i, j - 1, size)] + density[0][IDX(i, j + 1, size)])) / (1 + 4 * a);
 			}
 		}
 
-		ApplyBoundaryConditions(BoundaryCondition::Continuous, *density);
+		ApplyBoundaryConditions(BoundaryCondition::Continuous, density[0]);
 	}
 }
 
@@ -121,12 +119,12 @@ void FluidField::Advect(double dt)
 			double t1 = y - j0;
 			double t0 = 1 - t1;
 
-			PVALUE(density, i, j) = s0 * (t0 * PVALUE(prevDensity, i0, j0) + t1 * PVALUE(prevDensity, i0, j1)) +
-									s1 * (t0 * PVALUE(prevDensity, i1, j0) + t1 * PVALUE(prevDensity, i1, j1));
+			density.Current()[IDX(i, j, size)] = s0 * (t0 * density[1][IDX(i0, j0, size)] + t1 * density[1][IDX(i0, j1, size)]) +
+									s1 * (t0 * density[1][IDX(i1, j0, size)] + t1 * density[1][IDX(i1, j1, size)]);
 		}
 	}
 
-	ApplyBoundaryConditions(BoundaryCondition::Continuous, *density);
+	ApplyBoundaryConditions(BoundaryCondition::Continuous, density[0]);
 }
 
 void FluidField::DiffuseVelocity(double visc, double dt)
@@ -276,10 +274,8 @@ void FluidField::DensityStep(double diff, double dt)
 		if(dx > 0 && dx < this->size - 1 && dy > 0 && dy < this->size - 1)
 			AddSource(dx, dy, 100.0, dt);
 
-	std::swap(prevDensity, density);	
-	Diffuse(diff, dt);
-	std::swap(prevDensity, density);
-	Advect(dt);
+	density.Evolve(std::bind(&FluidField::Diffuse, this, diff, dt));
+	density.Evolve(std::bind(&FluidField::Advect, this, dt));
 }
 
 void FluidField::Draw(SDL_Renderer* renderer, const SDL_Rect& target)
@@ -295,7 +291,7 @@ void FluidField::Draw(SDL_Renderer* renderer, const SDL_Rect& target)
 	{
 		for (int x = 0; x < this->size; x++)
 		{
-			double densityVal = std::min(PVALUE(density, x, y), 1.0);
+			double densityVal = std::min(density.Current()[IDX(x, y, size)], 1.0);
 			SDL_SetRenderDrawColor(renderer, densityVal * 255, densityVal * 255, densityVal * 255, 255);
 
 			vectorCenterSquare.x = (double)target.x + cellWidth * x;	// cellWidth * x + cellWidth / 2 - cellWidth / 10

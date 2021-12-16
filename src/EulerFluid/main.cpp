@@ -1,4 +1,5 @@
 #include "EulerFluid.hpp"
+#include "RetentiveArray.hpp"
 
 #include <thread>
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "RetentiveArray.hpp"
 
 class VectorField;
 struct SDL_Renderer;
@@ -39,8 +40,7 @@ private:
 
 	VectorField* vel;
 	VectorField* prevVel;
-	std::vector<double>* density;
-	std::vector<double>* prevDensity;
+	RetentiveArray<double, 1> density;
 
 	int lastMouseX, lastMouseY;
 };
