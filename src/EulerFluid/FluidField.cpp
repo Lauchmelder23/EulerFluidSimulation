@@ -222,7 +222,7 @@ void FluidField::Project()
 	{
 		for (int j = 1; j <= N; j++)
 		{
-			velocity[1].vertical[IDX(i, j, size)] = -0.5 * h * (velocity.Current().vertical[IDX(i + 1, j, size)] - velocity.Current().vertical[IDX(i - 1, j, size)] + velocity.Current().vertical[IDX(i, j + 1, size)] - velocity.Current().vertical[IDX(i, j - 1, size)]);
+			velocity[1].vertical[IDX(i, j, size)] = -0.5 * h * (velocity.Current().horizontal[IDX(i + 1, j, size)] - velocity.Current().horizontal[IDX(i - 1, j, size)] + velocity.Current().vertical[IDX(i, j + 1, size)] - velocity.Current().vertical[IDX(i, j - 1, size)]);
 			velocity[1].horizontal[IDX(i, j, size)] = 0;
 		}
 	}
