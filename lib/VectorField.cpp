@@ -12,8 +12,8 @@ VectorField::VectorField() :
 VectorField::VectorField(int width, int height) :
 	width(width), height(height)
 {
-	horizontal	= std::vector<double>(width * height, 0.0);
-	vertical	= std::vector<double>(width * height, 0.0);
+	horizontal = std::vector<double>(width * height, 0.0);
+	vertical = std::vector<double>(width * height, 0.0);
 
 	biggestMagnitude = 1.0f;
 }
@@ -62,7 +62,7 @@ void VectorField::RecalculateMagnitude()
 		{
 			double u = horizontal[y * this->width + x];
 			double v = vertical[y * this->width + x];
-			double magnitude = u*u + v*v;
+			double magnitude = u * u + v * v;
 
 			biggestMagnitude = std::max(biggestMagnitude, magnitude);
 		}

@@ -21,9 +21,8 @@
  */
 template<
 	typename Type,
-	unsigned int AttentionSpan,
-	typename std::enable_if_t<(AttentionSpan > 0), bool> = true>
-class RetentiveObject : public RetentiveEntity<Type*, AttentionSpan>
+	unsigned int AttentionSpan>
+class RetentiveObject : public RetentiveEntity<Type, AttentionSpan, true>
 {
 public:
 	/**
@@ -34,7 +33,7 @@ public:
 		// Create new vectors for every generation that needs to be remembered
 		for (int n = 0; n <= AttentionSpan; n++)
 		{
-			data[n] = new Type();
+			data[n] = std::make_shared<Type>();
 		}
 	}
 
@@ -45,10 +44,10 @@ public:
 	 */
 	RetentiveObject(const Type& initVal)
 	{
-		// Create new vectors for every generation that needs to be remembered
+		// Create new objects for every generation that needs to be remembered
 		for (int n = 0; n <= AttentionSpan; n++)
 		{
-			data[n] = new Type(initVal);
+			data[n] = std::make_shared<Type>(initVal);
 		}
 	}
 
@@ -77,7 +76,6 @@ public:
 		for (int n = 0; n <= AttentionSpan; n++)
 		{
 			data[n] = other.data[n];
-			other.data[n] = nullptr;
 		}
 
 		return *this;
@@ -101,36 +99,6 @@ public:
 	RetentiveObject(RetentiveObject<Type, AttentionSpan>&& other)
 	{
 		*this = other;
-	}
-
-	~RetentiveObject()
-	{
-		for (int n = 0; n <= AttentionSpan; n++)
-		{
-			if (data[n] != nullptr)
-				delete data[n];
-		}
-	}
-
-	/**
-	 * @brief Get the object from `index` generations ago
-	 *
-	 * @param index Amount of generations to go backwards in time
-	 * @return The object from before `index` generations
-	 */
-	Type& operator[](size_t index) override
-	{
-		return *(data[index]);
-	}
-
-	/**
-	 * @brief Get the most up-to-date object
-	 *
-	 * @return The object with generation 0
-	 */
-	Type& Current() override
-	{
-		return *(data[0]);
 	}
 
 private:

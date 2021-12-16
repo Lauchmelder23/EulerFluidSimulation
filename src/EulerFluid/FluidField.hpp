@@ -1,9 +1,10 @@
 #pragma once
 
 #include <vector>
+#include "VectorField.hpp"
 #include "RetentiveArray.hpp"
+#include "RetentiveObject.hpp"
 
-class VectorField;
 struct SDL_Renderer;
 struct SDL_Rect;
 
@@ -38,8 +39,7 @@ public:
 private:
 	int size;
 
-	VectorField* vel;
-	VectorField* prevVel;
+	RetentiveObject<VectorField, 1> velocity;
 	RetentiveArray<double, 1> density;
 
 	int lastMouseX, lastMouseY;

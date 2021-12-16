@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <SDL.h>
+
 #include "VectorField.hpp"
 
 #define VALUE(arr, x, y) ((arr)[(y) * this->size + (x)])
@@ -33,14 +34,12 @@ FluidField::FluidField(int size) :
 		}
 	}
 
-	vel		= new VectorField(this->size, this->size, hori, vert);	// gonna do the same inefficient calculations twice, why not
-	prevVel = new VectorField(this->size, this->size, hori, vert);
+	velocity = RetentiveObject<VectorField, 1>(VectorField(this->size, this->size, hori, vert));
 }
 
 FluidField::~FluidField()
 {
-	delete prevVel;
-	delete vel;
+	// Do nothing
 }
 
 void FluidField::AddSource(int x, int y, double dens, double dt)
@@ -51,8 +50,8 @@ void FluidField::AddSource(int x, int y, double dens, double dt)
 
 void FluidField::AddFlow(int x, int y, double dx, double dy, double dt)
 {
-	VALUE(vel->horizontal, x, y) += dt * dx;
-	VALUE(vel->vertical, x, y) += dt * dy;
+	velocity.Current().horizontal[IDX(x, y, size)] += dt * dx;
+	velocity.Current().vertical[IDX(x, y, size)] += dt * dy;
 }
 
 void FluidField::ApplyBoundaryConditions(BoundaryCondition condition, std::vector<double>& field)
@@ -101,8 +100,8 @@ void FluidField::Advect(double dt)
 	{
 		for (int j = 1; j <= N; j++)
 		{
-			double x = i - dt0 * VALUE(vel->horizontal, i, j);
-			double y = j - dt0 * VALUE(vel->vertical, i, j);
+			double x = i - dt0 * velocity.Current().horizontal[IDX(i, j, size)];
+			double y = j - dt0 * velocity.Current().vertical[IDX(i, j, size)];
 
 			if (x < 0.5)		x = 0.5;
 			if (x > N + 0.5)	x = N + 0.5;
@@ -138,13 +137,13 @@ void FluidField::DiffuseVelocity(double visc, double dt)
 		{
 			for (int j = 1; j <= N; j++)
 			{
-				VALUE(vel->horizontal, i, j) = (VALUE(prevVel->horizontal, i, j) + a * (VALUE(vel->horizontal, i - 1, j) + VALUE(vel->horizontal, i + 1, j) + VALUE(vel->horizontal, i, j - 1) + VALUE(vel->horizontal, i, j + 1))) / (1 + 4 * a);
-				VALUE(vel->vertical, i, j) = (VALUE(prevVel->vertical, i, j) + a * (VALUE(vel->vertical, i - 1, j) + VALUE(vel->vertical, i + 1, j) + VALUE(vel->vertical, i, j - 1) + VALUE(vel->vertical, i, j + 1))) / (1 + 4 * a);
+				velocity.Current().horizontal[IDX(i, j, size)] = (velocity[1].horizontal[IDX(i, j, size)] + a * (velocity[1].horizontal[IDX(i - 1, j, size)] + velocity[1].horizontal[IDX(i + 1, j, size)] + velocity[1].horizontal[IDX(i, j - 1, size)] + velocity[1].horizontal[IDX(i, j + 1, size)])) / (1 + 4 * a);
+				velocity.Current().vertical[IDX(i, j, size)] = (velocity[1].vertical[IDX(i, j, size)] + a * (velocity[1].vertical[IDX(i - 1, j, size)] + velocity[1].vertical[IDX(i + 1, j, size)] + velocity[1].vertical[IDX(i, j - 1, size)] + velocity[1].vertical[IDX(i, j + 1, size)])) / (1 + 4 * a);
 			}
 		}
 
-		ApplyBoundaryConditions(BoundaryCondition::Continuous, vel->horizontal);
-		ApplyBoundaryConditions(BoundaryCondition::Continuous, vel->vertical);
+		ApplyBoundaryConditions(BoundaryCondition::Continuous, velocity.Current().horizontal);
+		ApplyBoundaryConditions(BoundaryCondition::Continuous, velocity.Current().vertical);
 	}
 }
 
@@ -157,8 +156,8 @@ void FluidField::AdvectVelocity(double dt)
 	{
 		for (int j = 1; j <= N; j++)
 		{
-			double x = i - dt0 * VALUE(prevVel->horizontal, i, j);
-			double y = j - dt0 * VALUE(prevVel->vertical, i, j);
+			double x = i - dt0 * velocity[1].horizontal[IDX(i, j, size)];
+			double y = j - dt0 * velocity[1].vertical[IDX(i, j, size)];
 
 			if (x < 0.5)		x = 0.5;
 			if (x > N + 0.5)	x = N + 0.5;
@@ -175,16 +174,16 @@ void FluidField::AdvectVelocity(double dt)
 			double t1 = y - j0;
 			double t0 = 1 - t1;
 
-			VALUE(vel->horizontal, i, j) = s0 * (t0 * VALUE(prevVel->horizontal, i0, j0) + t1 * VALUE(prevVel->horizontal, i0, j1)) +
-				s1 * (t0 * VALUE(prevVel->horizontal, i1, j0) + t1 * VALUE(prevVel->horizontal, i1, j1));
+			velocity.Current().horizontal[IDX(i, j, size)] = s0 * (t0 * velocity[1].horizontal[IDX(i0, j0, size)] + t1 * velocity[1].horizontal[IDX(i0, j1, size)]) +
+				s1 * (t0 * velocity[1].horizontal[IDX(i1, j0, size)] + t1 * velocity[1].horizontal[IDX(i1, j1, size)]);
 
-			VALUE(vel->vertical, i, j) = s0 * (t0 * VALUE(prevVel->vertical, i0, j0) + t1 * VALUE(prevVel->vertical, i0, j1)) +
-				s1 * (t0 * VALUE(prevVel->vertical, i1, j0) + t1 * VALUE(prevVel->vertical, i1, j1));
+			velocity.Current().vertical[IDX(i, j, size)] = s0 * (t0 * velocity[1].vertical[IDX(i0, j0, size)] + t1 * velocity[1].vertical[IDX(i0, j1, size)]) +
+				s1 * (t0 * velocity[1].vertical[IDX(i1, j0, size)] + t1 * velocity[1].vertical[IDX(i1, j1, size)]);
 		}
 	}
 
-	ApplyBoundaryConditions(BoundaryCondition::InvertHorizontal, vel->horizontal);
-	ApplyBoundaryConditions(BoundaryCondition::InvertVertical, vel->vertical);
+	ApplyBoundaryConditions(BoundaryCondition::InvertHorizontal, velocity.Current().horizontal);
+	ApplyBoundaryConditions(BoundaryCondition::InvertVertical, velocity.Current().vertical);
 }
 
 void FluidField::VelocityStep(double visc, double dt)
@@ -206,11 +205,9 @@ void FluidField::VelocityStep(double visc, double dt)
 	lastMouseX = dx;
 	lastMouseY = dy;
 
-	std::swap(vel, prevVel);
-	DiffuseVelocity(visc, dt);
+	velocity.Evolve(std::bind(&FluidField::DiffuseVelocity, this, visc, dt));
 	Project();
-	std::swap(vel, prevVel);
-	AdvectVelocity(dt);
+	velocity.Evolve(std::bind(&FluidField::AdvectVelocity, this, dt));
 	Project();
 
 	// vel->RecalculateMagnitude();
@@ -225,13 +222,13 @@ void FluidField::Project()
 	{
 		for (int j = 1; j <= N; j++)
 		{
-			VALUE(prevVel->vertical, i, j) = -0.5 * h * (VALUE(vel->horizontal, i + 1, j) - VALUE(vel->horizontal, i - 1, j) + VALUE(vel->vertical, i, j + 1) - VALUE(vel->vertical, i, j - 1));
-			VALUE(prevVel->horizontal, i, j) = 0;
+			velocity[1].vertical[IDX(i, j, size)] = -0.5 * h * (velocity.Current().vertical[IDX(i + 1, j, size)] - velocity.Current().vertical[IDX(i - 1, j, size)] + velocity.Current().vertical[IDX(i, j + 1, size)] - velocity.Current().vertical[IDX(i, j - 1, size)]);
+			velocity[1].horizontal[IDX(i, j, size)] = 0;
 		}
 	}
 
-	ApplyBoundaryConditions(BoundaryCondition::Continuous, prevVel->horizontal);
-	ApplyBoundaryConditions(BoundaryCondition::Continuous, prevVel->vertical);
+	ApplyBoundaryConditions(BoundaryCondition::Continuous, velocity[1].horizontal);
+	ApplyBoundaryConditions(BoundaryCondition::Continuous, velocity[1].vertical);
 
 	for (int k = 0; k < 20; k++)
 	{
@@ -239,24 +236,24 @@ void FluidField::Project()
 		{
 			for (int j = 1; j <= N; j++)
 			{
-				VALUE(prevVel->horizontal, i, j) = (VALUE(prevVel->vertical, i, j) + VALUE(prevVel->horizontal, i - 1, j) + VALUE(prevVel->horizontal, i + 1, j) + VALUE(prevVel->vertical, i, j - 1) + VALUE(prevVel->vertical, i, j + 1)) / 4.0;
+				velocity[1].horizontal[IDX(i, j, size)] = (velocity[1].vertical[IDX(i, j, size)] + velocity[1].vertical[IDX(i - 1, j, size)] + velocity[1].vertical[IDX(i + 1, j, size)] + velocity[1].vertical[IDX(i, j - 1, size)] + velocity[1].vertical[IDX(i, j + 1, size)]) / 4.0;
 			}
 		}
 
-		ApplyBoundaryConditions(BoundaryCondition::Continuous, prevVel->horizontal);
+		ApplyBoundaryConditions(BoundaryCondition::Continuous, velocity[1].horizontal);
 	}
 
 	for (int i = 1; i <= N; i++)
 	{
 		for (int j = 1; j <= N; j++)
 		{
-			VALUE(vel->horizontal, i, j) -= 0.5 * (VALUE(prevVel->horizontal, i + 1, j) - VALUE(prevVel->horizontal, i - 1, j)) / h;
-			VALUE(vel->vertical, i, j) -= 0.5 * (VALUE(prevVel->horizontal, i, j + 1) - VALUE(prevVel->horizontal, i, j - 1)) / h;
+			velocity.Current().horizontal[IDX(i, j, size)] -= 0.5 * (velocity[1].horizontal[IDX(i + 1, j, size)] - velocity[1].horizontal[IDX(i - 1, j, size)]) / h;
+			velocity.Current().vertical[IDX(i, j, size)] -= 0.5 * (velocity[1].horizontal[IDX(i, j + 1, size)] - velocity[1].horizontal[IDX(i, j - 1, size)]) / h;
 		}
 	}
 
-	ApplyBoundaryConditions(BoundaryCondition::InvertHorizontal, prevVel->horizontal);
-	ApplyBoundaryConditions(BoundaryCondition::InvertVertical, prevVel->vertical);
+	ApplyBoundaryConditions(BoundaryCondition::InvertHorizontal, velocity[1].horizontal);
+	ApplyBoundaryConditions(BoundaryCondition::InvertVertical, velocity[1].vertical);
 }
 
 void FluidField::DensityStep(double diff, double dt)
@@ -300,5 +297,5 @@ void FluidField::Draw(SDL_Renderer* renderer, const SDL_Rect& target)
 		}
 	}
 
-	vel->Draw(renderer, target);
+	velocity.Current().Draw(renderer, target);
 }

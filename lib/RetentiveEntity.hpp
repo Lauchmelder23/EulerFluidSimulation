@@ -3,6 +3,76 @@
 #include <vector>
 #include <array>
 #include <functional>
+#include <memory>
+
+template<
+	typename Type,
+	unsigned int AttentionSpan,
+	bool IsPointerType>
+class _RetentiveEntityBase;
+
+template<
+	typename Type,
+	unsigned int AttentionSpan>
+class _RetentiveEntityBase<Type, AttentionSpan, false>
+{
+public:
+	/**
+	 * @brief Get the entity from `index` generations ago
+	 *
+	 * @param index Amount of generations to go backwards in time
+	 * @return The entity from before `index` generations
+	 */
+	Type& operator[](size_t index)
+	{
+		return data[index];
+	}
+
+	/**
+	 * @brief Get the most up-to-date entity
+	 *
+	 * @return The entity with generation 0
+	 */
+	Type& Current()
+	{
+		return data[0];
+	}
+
+protected:
+	std::array<Type, AttentionSpan + 1> data;
+};
+
+
+template<
+	typename Type,
+	unsigned int AttentionSpan>
+class _RetentiveEntityBase<Type, AttentionSpan, true>
+{
+public:
+	/**
+	 * @brief Get the entity from `index` generations ago
+	 *
+	 * @param index Amount of generations to go backwards in time
+	 * @return The entity from before `index` generations
+	 */
+	Type& operator[](size_t index)
+	{
+		return *(data[index]);
+	}
+
+	/**
+	 * @brief Get the most up-to-date entity
+	 *
+	 * @return The entity with generation 0
+	 */
+	Type& Current()
+	{
+		return *(data[0]);
+	}
+
+protected:
+	std::array<std::shared_ptr<Type>, AttentionSpan + 1> data;	// Shared for move semantics
+};
 
 /**
  * @brief Abstract base type for all retentive things
@@ -13,8 +83,8 @@
 template<
 	typename Type,
 	unsigned int AttentionSpan,
-	typename std::enable_if_t<(AttentionSpan > 0), bool> = true>
-class RetentiveEntity
+	bool IsPointerType = false>
+class RetentiveEntity : public _RetentiveEntityBase<Type, AttentionSpan, IsPointerType>
 {
 public:
 	RetentiveEntity() {}
@@ -22,27 +92,6 @@ public:
 	RetentiveEntity(RetentiveEntity<Type, AttentionSpan>&& other) = delete;
 	RetentiveEntity<Type, AttentionSpan>& operator=(const RetentiveEntity<Type, AttentionSpan>& other) = delete;
 	RetentiveEntity<Type, AttentionSpan>& operator=(RetentiveEntity<Type, AttentionSpan>&& other) = delete;
-
-	/**
-	 * @brief Get the entity from `index` generations ago
-	 *
-	 * @param index Amount of generations to go backwards in time
-	 * @return The entity from before `index` generations
-	 */
-	virtual Type& operator[](size_t index)
-	{
-		return data[index];
-	}
-
-	/**
-	 * @brief Get the most up-to-date entity
-	 *
-	 * @return The entity with generation 0
-	 */
-	virtual Type& Current()
-	{
-		return data[0];
-	}
 
 	/**
 	 * @brief Evolve the data in the entity
@@ -92,8 +141,4 @@ protected:
 	 * @brief Swaps the objects in the array
 	 */
 	virtual void CycleGenerations() = 0;
-
-protected:
-	std::array<Type, AttentionSpan + 1> data;
-	std::function<void(void)> rule = std::bind([]() {});	// Do nothing by default
 };
